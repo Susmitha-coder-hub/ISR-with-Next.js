@@ -8,8 +8,11 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json ./
+RUN npm config set registry https://registry.npmjs.org/
+RUN npm config set fetch-retry-mintimeout 20000
+RUN npm config set fetch-retry-maxtimeout 120000
+RUN npm install --no-audit
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -38,8 +41,8 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
-mkdir .next
-chown nextjs:nodejs .next
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
